@@ -1,0 +1,14 @@
+[
+{
+  "directory": "D:/nowe pliki pobrane/TS_parser_S1/build",
+  "command": "D:\\msys2\\mingw64\\bin\\g++.exe    -Wall -Wextra -Wpedantic -g -std=gnu++17 -o CMakeFiles\\TS-PARSER.dir\\tsTransportStream.cpp.obj -c \"D:\\nowe pliki pobrane\\TS_parser_S1\\tsTransportStream.cpp\"",
+  "file": "D:/nowe pliki pobrane/TS_parser_S1/tsTransportStream.cpp",
+  "output": "CMakeFiles/TS-PARSER.dir/tsTransportStream.cpp.obj"
+},
+{
+  "directory": "D:/nowe pliki pobrane/TS_parser_S1/build",
+  "command": "D:\\msys2\\mingw64\\bin\\g++.exe    -Wall -Wextra -Wpedantic -g -std=gnu++17 -o CMakeFiles\\TS-PARSER.dir\\TS_parser.cpp.obj -c \"D:\\nowe pliki pobrane\\TS_parser_S1\\TS_parser.cpp\"",
+  "file": "D:/nowe pliki pobrane/TS_parser_S1/TS_parser.cpp",
+  "output": "CMakeFiles/TS-PARSER.dir/TS_parser.cpp.obj"
+}
+]

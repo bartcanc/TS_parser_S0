@@ -1,0 +1,3 @@
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\TS-PARSER.dir/objects.a
+D:\msys2\mingw64\bin\ar.exe qc CMakeFiles\TS-PARSER.dir/objects.a @CMakeFiles\TS-PARSER.dir\objects1.rsp
+D:\msys2\mingw64\bin\g++.exe  -Wall -Wextra -Wpedantic -g -Wl,--whole-archive CMakeFiles\TS-PARSER.dir/objects.a -Wl,--no-whole-archive -o TS-PARSER.exe -Wl,--out-implib,libTS-PARSER.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\TS-PARSER.dir\linkLibs.rsp
