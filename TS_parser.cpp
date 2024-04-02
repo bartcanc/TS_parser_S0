@@ -19,22 +19,24 @@ int main(/*int argc, char *argv[ ], char *envp[ ]*/)
       while(/*not eof*/ !plik.eof())
       {
         // TODO - read from file          V
-        char output[4+1] = {0};       
-        plik.read(output, 4);         // 4 bajty - 4*8 bitow = 32 bity
+        char output[188] = {0};       
+        plik.read(output, 188);         // 4 bajty - 4*8 bitow = 32 bity
         
-        uint32_t str = output[0];     // przypisujemy pierwszy bajt   
+        uint8_t* str = new uint8_t[188];
+        str[0] = uint8_t(output[0]);     // przypisujemy pierwszy bajt   
 
-        for(int i(1);i<4;i++){
-          unsigned char dummy;
-          dummy = output[i];
-            str = str << 8;             // przesuwamy liczbe o 1 bajt
-            str = (str | dummy);    // przypisujemy następny bajt
+        for(int i(1);i<188;i++){
+          // unsigned char dummy;
+          // dummy = output[i];
+          //   str = str << 8;             // przesuwamy liczbe o 1 bajt
+          //   str = (str | dummy);    // przypisujemy następny bajt
             //std::cout << "polaczenie nr " << i << " " << str << std::endl;
+          str[i] = uint8_t(output[i]);
         }
         TS_PacketHeader.Reset();
-        uint32_t* streamPrt = &str; 
+//        uint32_t* streamPrt = &str; 
         
-        if(output[0]==0x47 && TS_PacketId <5000){      // po kilku przestaje wypisywac ,i cant...
+        if(output[0]==0x47 && TS_PacketId <50){      // po kilku przestaje wypisywac ,i cant...
           // std::cout << int(output[0]) << std::endl;
           // std::cout << int(output[1]) << std::endl;
           // std::cout << int(output[2]) << std::endl;
@@ -59,7 +61,7 @@ int main(/*int argc, char *argv[ ], char *envp[ ]*/)
           // wystarczy w parserze dac warunek ze zaczyna sie od 47
           
           //std::cout << str << std::endl;
-          TS_PacketHeader.Parse(streamPrt);
+          TS_PacketHeader.Parse(str);
           printf("%010d ", TS_PacketId);
           TS_PacketHeader.Print();
           printf("\n");

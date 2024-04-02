@@ -24,16 +24,27 @@ void xTS_PacketHeader::Reset()
   @param Input is pointer to buffer containing TS packet
   @return Number of parsed bytes (4 on success, -1 on failure) 
  */
-int32_t xTS_PacketHeader::Parse(const uint32_t* Input)    //funkcja przestała działac... (nie zmienilem w niej nic)
+int32_t xTS_PacketHeader::Parse(const uint8_t* Input)    //funkcja przestała działac... (nie zmienilem w niej nic)
 {
   //std::cout << *Input << std::endl;
-  uint32_t* HP = (uint32_t*)Input;
-  uint32_t Head = xSwapBytes32(*HP);
+  // uint32_t* HP = (uint32_t*)Input;
+  // uint32_t Head = xSwapBytes32(*HP);
+  uint32_t Head = 0;
+  for(int i(0);i<4;i++){
+    //std::cout << "input " << i << " " << int(Input[i]) << std::endl;
+    Head = Head | Input[i];
+    if(i!=3){
+      Head = Head << 8;
+    }
+    //std::cout << "Head = " << Head << std::endl;
+  }
+  Head = xSwapBytes32(Head);
+
   //std::cout << Head << std::endl;
   if(Head){
     m_SB = m_SB|Head;     //SB          V
   }
-  //std::cout << "w funkcji " << m_SB << std::endl;
+  //std::cout << "w funkcji " << int(m_SB) << std::endl;
   if(m_SB == 0x47){
     Head = Head >> 8;
     if(Head){

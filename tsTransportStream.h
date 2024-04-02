@@ -78,7 +78,7 @@ protected:
 
 public:
   void     Reset();
-  int32_t  Parse(const uint32_t* Input);
+  int32_t  Parse(const uint8_t* Input);
   void     Print() const;
 
 public:
