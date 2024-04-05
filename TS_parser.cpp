@@ -9,11 +9,12 @@ int main(int argc, char *argv[ ], char *envp[ ])
 { 
   // TODO - open file   V
   std::fstream plik;
-  plik.open("D:/nowe pliki pobrane/example_new.ts", std::ios::binary | std::ios::in);
+  plik.open("build/example_new.ts", std::ios::binary | std::ios::in);
   
   // TODO - check if file if opened     V
   if(plik.good() and plik.is_open()){
       xTS_PacketHeader TS_PacketHeader;
+      xTS_AdaptationField TS_AdaptationField;
 
       int32_t TS_PacketId = 0;
       while(/*not eof*/ !plik.eof())
@@ -34,17 +35,16 @@ int main(int argc, char *argv[ ], char *envp[ ])
           str[i] = uint8_t(output[i]);
         }
         TS_PacketHeader.Reset();
+        TS_AdaptationField.Reset();
 //        uint32_t* streamPrt = &str; 
         
-        if(output[0]==0x47 && TS_PacketId <50){      // po kilku przestaje wypisywac ,i cant...
+        if(output[0]==0x47 && TS_PacketId <34){      // po kilku przestaje wypisywac ,i cant...
           // std::cout << int(output[0]) << std::endl;
           // std::cout << int(output[1]) << std::endl;
           // std::cout << int(output[2]) << std::endl;
           // std::cout << int(output[3]) << std::endl;
           // std::cout << str << std::endl;
           // std::cout << int(output[0]) << std::endl;        sprawdzalem ocb i wyszlo ze ujemne liczby psują input
-
-
 
           // plan jest taki
           // - zczytujemy 32 bity do zmiennej           V
@@ -61,10 +61,18 @@ int main(int argc, char *argv[ ], char *envp[ ])
           // wystarczy w parserze dac warunek ze zaczyna sie od 47
           
           //std::cout << str << std::endl;
+
+          //  Parsing
           TS_PacketHeader.Parse(str);
-          printf("%010d ", TS_PacketId);
-          TS_PacketHeader.Print();
-          printf("\n");
+          TS_AdaptationField.Parse(str,TS_PacketHeader.getAFC()); //TODO: spojrzec na to jeszcze bo chyba jest zle
+
+          //  Printing
+          //if((TS_PacketHeader.getAFC()==2 or TS_PacketHeader.getAFC()==3) and TS_AdaptationField.getPR()){
+            printf("%010d ", TS_PacketId);
+            TS_PacketHeader.Print();
+            TS_AdaptationField.Print();
+            printf("\n");
+          //}
         }
         TS_PacketId++;
       }

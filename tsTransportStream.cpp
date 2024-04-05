@@ -1,6 +1,7 @@
 #include "tsTransportStream.h"
 #include "tsCommon.h"
 #include <iostream>
+#include <bitset>
 //=============================================================================================================================================================================
 // xTS_PacketHeader
 //=============================================================================================================================================================================
@@ -107,6 +108,150 @@ void xTS_PacketHeader::Print() const
   // trzeba rzutowac bo z jakiegos powodu nie mozna wypisac uint8_t normalnym sposobem
 }
 
+// ---------AF------------------------------------------------
 
+/// @brief Reset - reset all TS packet header fields
+void xTS_AdaptationField::Reset()
+{
+//setup
+  m_AdaptationFieldControl=0;
+  m_AdaptationFieldLength=0;
+  DC=0; 
+  RA=0; 
+  SP=0; 
+  PR=0; 
+  OR=0; 
+  SF=0; 
+  TP=0; 
+  EX=0;
+
+  PCRB=0;                    
+  R=0;                      
+  PCRE=0;                       
+  //OR = 1
+  OPCRB=0;                     
+  R=0;                           
+  OPCRE=0;                       
+  Stuffing=0;
+}
+/**
+@brief Parse adaptation field
+@param PacketBuffer is pointer to buffer containing TS packet
+@param AdaptationFieldControl is value of Adaptation Field Control field of
+corresponding TS packet header
+@return Number of parsed bytes (length of AF or -1 on failure)
+*/
+int32_t xTS_AdaptationField::Parse(const uint8_t* PacketBuffer, uint8_t
+AdaptationFieldControl)
+{
+//parsing
+  m_AdaptationFieldControl=AdaptationFieldControl;
+  if(m_AdaptationFieldControl == 2 or m_AdaptationFieldControl == 3){
+    m_AdaptationFieldLength = PacketBuffer[4];
+    //std::cout << std::endl;
+    //std::cout <<  int(PacketBuffer[4]) << std::endl;
+    uint8_t mask = 0b10000000;
+    //std::cout << std::endl;
+    DC = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(DC) << std::endl;
+
+    RA = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(RA) << std::endl;
+
+    SP = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(SP) << std::endl;
+
+    PR = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(PR) << std::endl;
+
+    OR = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(OR) << std::endl;
+
+    SF = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(SF) << std::endl;
+
+    TP = PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //std::cout << int(TP) << std::endl;
+
+    EX |= PacketBuffer[5] & mask;
+    mask = mask >> 1;
+    //td::cout << int(EX) << std::endl;
+
+    Stuffing = m_AdaptationFieldLength - 1;
+
+    if(PR){   // nastepne 48 bit - 6 bajt
+      //wyliczenie pól
+      //PCRB = PCRB | (0b10000000 & PacketBuffer[10]);
+      for(int i=0;i<4;i++){
+        // std::bitset<8> x(PacketBuffer[6+i]);
+        PCRB = PCRB | PacketBuffer[6+i];
+        // std::cout << "PacketBuffer[" << 6+i << "] = " << x << std::endl;
+        if(i!=3){
+          PCRB = PCRB << 8;
+        }
+        else{
+          PCRB = PCRB << 1;
+        }
+      }
+      PCRB = PCRB | ((0b10000000 & PacketBuffer[10])?1:0);
+      // std::bitset<8> x(PacketBuffer[10]);
+      // std::cout << "PacketBuffer[" << 10 << "] = " << x << std::endl;
+      //std::cout << int(PacketBuffer[10]) << std::endl;
+      R = R | ((0b01111110 & PacketBuffer[10]) >> 1);
+      //std::cout << int(R) << std::endl;
+      PCRE = PCRE | (1 & PacketBuffer[10]);
+      PCRE = PCRE << 8;
+      PCRE = PCRE | PacketBuffer[11];
+      // std::bitset<8> y(PacketBuffer[11]);
+      // std::cout << "PacketBuffer[" << 11 << "] = " << y << std::endl;
+      Stuffing=0;
+    }
+    else if(OR){
+      //wyliczenie pól
+      for(int i=0;i<4;i++){
+        OPCRB = OPCRB | PacketBuffer[6+i];
+        if(i!=3){
+          OPCRB = OPCRB << 8;
+        }
+        else{
+          OPCRB = OPCRB << 1;
+        }
+      }
+      OPCRB = OPCRB | (((0b10000000 & PacketBuffer[10])>0)?1:0);
+      R2 = R2 | (0b01111110 & PacketBuffer[10]);
+      
+      OPCRE = OPCRE | (1 & PacketBuffer[10]);
+      OPCRE = OPCRE << 8;
+      OPCRE = OPCRE | PacketBuffer[11];
+      
+
+      Stuffing=0;
+    }
+    return 4;
+  }
+  return -1;
+}
+/// @brief Print all TS packet header fields
+void xTS_AdaptationField::Print() const
+{
+//print print print
+if(m_AdaptationFieldControl == 2 or m_AdaptationFieldControl == 3){
+  std::cout << " AF: L=" << int(m_AdaptationFieldLength) << " DC=" << int(DC) << " RA=" << int(RA) << " SP=" << int(SP) << " PR=" << int(PR) << " OR=" << int(OR) << " SF=" << int(SF) << " TP=" << int(TP) << " EX=" << int(EX);
+  if(PR == 1){
+    std::cout << " PCR=" << PCRB /*<< obliczone cos tam*/;
+  }
+  else if (OR == 1){
+    std::cout << " OPCR=" /*<< obliczone cos tam*/;
+  }
+  std::cout << " Stuffing=" << int(Stuffing);
+}
+}
 
 //=============================================================================================================================================================================

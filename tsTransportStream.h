@@ -96,4 +96,49 @@ public:
   bool     hasPayload        () const { return !(m_AFC == 0 || m_AFC == 2); }
 };
 
+class xTS_AdaptationField
+{
+protected:
+  //setup
+  uint8_t m_AdaptationFieldControl;     
+  //mandatory fields
+  uint8_t m_AdaptationFieldLength;      // Adaptation field length (AFL) : 8 bits                 (Stuffing = AFL-1)
+  bool DC;                              // Discontinuity indicator (DC ) : 1 bit                  (Stuffing = 0)
+  bool RA;                              // Random access indicator (RA ) : 1 bit                  (Stuffing = 0)
+  bool SP;                              // Elementary stream priority indicator (SP ) : 1 bit
+  bool PR;                              // Program Clock Reference flag (PR ) : 1 bit
+  bool OR;                              // Original Program Clock Reference flag (OR ) : 1 bit
+  bool SF;                              // Splicing point flag (SF ) : 1 bit
+  bool TP;                              // Transport private data flag (TP ) : 1 bit
+  bool EX;                              // Adaptation field extension flag (EX ) : 1 bit
+  //optional fields - PCR
+  //PR = 1
+  uint64_t PCRB;                        // program clock reference base (PCRB) : 33 bits
+  uint8_t R;                            // reserved (R) : 6 bits
+  uint16_t PCRE;                        // program clock reference extension (PCRE) : 9 bits
+  //OR = 1
+  uint64_t OPCRB;                       // program clock reference base (PCRB) : 33 bits
+  uint8_t R2;                            // reserved (R) : 6 bits
+  uint16_t OPCRE;                       // program clock reference extension (PCRE) : 9 bits
+  //SF = 1
+
+  //TP = 1
+
+  //EX = 1
+
+  //Stuffing
+  uint8_t Stuffing;
+public:
+  void Reset();
+  int32_t Parse(const uint8_t* PacketBuffer, uint8_t AdaptationFieldControl);
+  void Print() const;
+public:
+  //mandatory fields
+  uint8_t getAdaptationFieldLength () const { return
+  m_AdaptationFieldLength ; }
+  //derived values
+  //uint32_t getNumBytes () const { }
+  bool getPR(){return PR;}
+};  
+
 //=============================================================================================================================================================================
