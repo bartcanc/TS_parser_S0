@@ -38,7 +38,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
         TS_AdaptationField.Reset();
 //        uint32_t* streamPrt = &str; 
         
-        if(output[0]==0x47 && TS_PacketId <34){      // po kilku przestaje wypisywac ,i cant...
+        if(output[0]==0x47 && TS_PacketId <190){      // po kilku przestaje wypisywac ,i cant...
           // std::cout << int(output[0]) << std::endl;
           // std::cout << int(output[1]) << std::endl;
           // std::cout << int(output[2]) << std::endl;

@@ -2,6 +2,7 @@
 #include "tsCommon.h"
 #include <iostream>
 #include <bitset>
+#include <iomanip>
 //=============================================================================================================================================================================
 // xTS_PacketHeader
 //=============================================================================================================================================================================
@@ -245,7 +246,8 @@ void xTS_AdaptationField::Print() const
 if(m_AdaptationFieldControl == 2 or m_AdaptationFieldControl == 3){
   std::cout << " AF: L=" << int(m_AdaptationFieldLength) << " DC=" << int(DC) << " RA=" << int(RA) << " SP=" << int(SP) << " PR=" << int(PR) << " OR=" << int(OR) << " SF=" << int(SF) << " TP=" << int(TP) << " EX=" << int(EX);
   if(PR == 1){
-    std::cout << " PCR=" << PCRB /*<< obliczone cos tam*/;
+    float time = (float)((PCRB*300)+PCRE)/27000000;
+    std::cout << " PCR=" << (PCRB*300)+PCRE << " (Time=" << time << "s)";
   }
   else if (OR == 1){
     std::cout << " OPCR=" /*<< obliczone cos tam*/;
