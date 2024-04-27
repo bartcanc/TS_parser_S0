@@ -141,4 +141,87 @@ public:
   bool getPR(){return PR;}
 };  
 
+class xPES_PacketHeader
+{
+  public:
+  enum eStreamId : uint8_t
+{
+  eStreamId_program_stream_map = 0xBC,
+  eStreamId_padding_stream = 0xBE,
+  eStreamId_private_stream_2 = 0xBF,
+  eStreamId_ECM = 0xF0,
+  eStreamId_EMM = 0xF1,
+  eStreamId_program_stream_directory = 0xFF,
+  eStreamId_DSMCC_stream = 0xF2,
+  eStreamId_ITUT_H222_1_type_E = 0xF8,
+};
+protected:
+  //PES packet header
+  uint32_t m_PacketStartCodePrefix;
+  uint8_t m_StreamId;
+  uint16_t m_PacketLength;
+
+  //optional data - 3 bajty + zmienna dlugosc pozostalych danych
+                                        // 2 bit
+  uint8_t m_PES_Scrambling_Control;     // 2 bit
+  bool m_PES_Priority;                  // 1 bit
+  bool m_Data_Alignment_Indicator;      // 1 bit
+  bool m_Copyright;                     // 1 bit
+  bool m_Original_Or_Copy;              // 1 bit
+  uint8_t m_PTS_DTS_Flags;              // 2 bit
+  bool m_ESCR_Flag;                     // 1 bit
+  bool m_ES_Rate_Flag;                  // 1 bit
+  bool m_DSM_Trick_Mode_Flag;           // 1 bit
+  bool m_Additional_Copy_Info_Flag;     // 1 bit
+  bool m_PES_CRC_Flag;                  // 1 bit
+  bool m_PES_Extension_Flag;            // 1 bit
+  uint8_t m_PES_Header_Data_Length;     // 8 bit
+
+public:
+  void Reset();
+  int32_t Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeaderS, xTS_AdaptationField TS_AdaptationField);
+  void Print() const;
+public:
+  //PES packet header
+  uint32_t getPacketStartCodePrefix() const { return m_PacketStartCodePrefix; }
+  uint8_t getStreamId () const { return m_StreamId; }
+  uint16_t getPacketLength () const { return m_PacketLength; }
+};
+
+class xPES_Assembler
+{
+public:
+  enum class eResult : int32_t
+{
+  UnexpectedPID = 1,
+  StreamPackedLost ,
+  AssemblingStarted ,
+  AssemblingContinue,
+  AssemblingFinished,
+};
+protected:
+  //setup
+  int32_t m_PID;
+  //buffer
+  uint8_t* m_Buffer;
+  uint32_t m_BufferSize;
+  uint32_t m_DataOffset;
+  //operation
+  int8_t m_LastContinuityCounter;
+  bool m_Started;
+  xPES_PacketHeader m_PESH;
+public:
+  xPES_Assembler ();
+  ~xPES_Assembler();
+  void Init (int32_t PID);
+  eResult AbsorbPacket(const uint8_t* TransportStreamPacket, const xTS_PacketHeader* PacketHeader, const xTS_AdaptationField* AdaptationField);
+  void PrintPESH () const { m_PESH.Print(); }
+  uint8_t* getPacket () { return m_Buffer; }
+  int32_t getNumPacketBytes() const { return m_DataOffset; }
+protected:
+  void xBufferReset ();
+  void xBufferAppend(const uint8_t* Data, int32_t Size);
+};
+
+
 //=============================================================================================================================================================================

@@ -256,4 +256,116 @@ if(m_AdaptationFieldControl == 2 or m_AdaptationFieldControl == 3){
 }
 }
 
+// xPES_PacketHeader----------------------------------------------
+void xPES_PacketHeader::Reset(){
+  m_PacketStartCodePrefix=0;           // 24 bit__________3 bytes
+  m_StreamId=0;                        // 8 bit___________1 byte
+  m_PacketLength=0;                    // 16 bit-_________2 bytes
+                                       // 2 bit
+  m_PES_Scrambling_Control = 0;        // 2 bit
+  m_PES_Priority = 0;                  // 1 bit
+  m_Data_Alignment_Indicator = 0;      // 1 bit
+  m_Copyright = 0;                     // 1 bit
+  m_Original_Or_Copy = 0;              // 1 bit___________1 byte
+  m_PTS_DTS_Flags = 0;                 // 2 bit
+  m_ESCR_Flag = 0;                     // 1 bit
+  m_ES_Rate_Flag = 0;                  // 1 bit
+  m_DSM_Trick_Mode_Flag = 0;           // 1 bit
+  m_Additional_Copy_Info_Flag = 0;     // 1 bit
+  m_PES_CRC_Flag = 0;                  // 1 bit
+  m_PES_Extension_Flag = 0;            // 1 bit___________1 byte
+  m_PES_Header_Data_Length = 0;        // 8 bit___________1 byte
+}
+
+int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeader, xTS_AdaptationField TS_AdaptationField){
+  int whereToStart=4;
+  if(TS_PacketHeader.getAFC()){
+    whereToStart+=1;
+    whereToStart+=TS_AdaptationField.getAdaptationFieldLength();
+  }
+  // zaczynamy parsowanie
+  // header ma zawsze 6 bajtów
+  // pierwsze 3 bajty - start code (0000 0000 | 0000 0000 | 0000 0001)
+  // 4 bajt - stream ID ()
+  // 5 i 6 bajt - długość pakietu PES (analogicznie jak w Adaptation Field)
+  if(Input[whereToStart] == 0 and Input[whereToStart+1] == 0 and Input[whereToStart+2] == 1){
+    m_PacketStartCodePrefix=1;
+    m_StreamId = Input[whereToStart+3];
+    m_PacketLength += Input[whereToStart+4];
+    m_PacketLength = m_PacketLength << 8;
+    m_PacketLength += Input[whereToStart+5];
+
+    switch(m_StreamId){
+      case eStreamId_program_stream_map:{
+        break;
+      }
+      case eStreamId_padding_stream:{
+        break;
+      }
+      case eStreamId_private_stream_2:{
+        break;
+      }
+      case eStreamId_ECM:{
+        break;
+      }
+      case eStreamId_EMM :{
+        break;
+      }
+      case eStreamId_program_stream_directory:{
+        break;
+      }
+      case eStreamId_DSMCC_stream:{
+        break;
+      }
+      case eStreamId_ITUT_H222_1_type_E:{
+        break;
+      }
+      default:{
+        // zczytujemy opcjonalne pola
+        if((Input[whereToStart+6]&0b10000000) and !(Input[whereToStart+6]&0b01000000)){
+          m_PES_Scrambling_Control = (m_PES_Scrambling_Control | (Input[whereToStart+6]&0b00110000)) >> 4;     // 2 bit
+          m_PES_Priority = (Input[whereToStart+6]&0b00001000);                  // 1 bit
+          m_Data_Alignment_Indicator = (Input[whereToStart+6]&0b00000100);      // 1 bit
+          m_Copyright = (Input[whereToStart+6]&0b00000010);                     // 1 bit
+          m_Original_Or_Copy = (Input[whereToStart+6]&0b00000001);              // 1 bit
+          m_PTS_DTS_Flags = (m_PTS_DTS_Flags | (Input[whereToStart+7]&0b11000000)) >> 6;              // 2 bit
+          m_ESCR_Flag = (Input[whereToStart+7]&0b00100000);                     // 1 bit
+          m_ES_Rate_Flag = (Input[whereToStart+7]&0b00010000);                  // 1 bit
+          m_DSM_Trick_Mode_Flag = (Input[whereToStart+7]&0b00001000);           // 1 bit
+          m_Additional_Copy_Info_Flag = (Input[whereToStart+7]&0b00000100);     // 1 bit
+          m_PES_CRC_Flag = (Input[whereToStart+7]&0b00000010);                  // 1 bit
+          m_PES_Extension_Flag = (Input[whereToStart+7]&0b00000001);            // 1 bit
+          m_PES_Header_Data_Length = Input[whereToStart+8];     // 8 bit
+        }
+        break;
+      }
+    } 
+  }
+  else{
+    return -1;
+  }
+  return 1;
+}
+
+void xPES_PacketHeader::Print() const{
+  std::cout << "PES: PSCP=" << int(m_PacketStartCodePrefix) << " SID=" << int(m_StreamId) << " L=" << int(m_PacketLength);
+}
+
+
+// xPES_Assembler-------------------------------------------------
+void xPES_Assembler::Init (int32_t PID){
+
+}
+xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStreamPacket, const xTS_PacketHeader* PacketHeader, const xTS_AdaptationField* AdaptationField){
+ xPES_Assembler::eResult x;
+
+ return x;
+}
+void xPES_Assembler::xBufferReset (){
+
+}
+void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
+
+}
+
 //=============================================================================================================================================================================
