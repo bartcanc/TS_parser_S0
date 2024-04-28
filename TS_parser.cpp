@@ -5,6 +5,9 @@
 
 //=============================================================================================================================================================================
 
+const bool printAF = false;
+const bool printPES = true;
+
 int main(int argc, char *argv[ ], char *envp[ ])
 { 
   // TODO - open file   V
@@ -20,6 +23,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
       xTS_PacketHeader TS_PacketHeader;
       xTS_AdaptationField TS_AdaptationField;
       xPES_PacketHeader PES_PacketHeader;
+      xPES_Assembler PES_Assembler;
 
       int32_t TS_PacketId = 0;
       while(/*not eof*/ !plik.eof())
@@ -44,7 +48,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
         PES_PacketHeader.Reset();
 //        uint32_t* streamPrt = &str; 
         
-        if(output[0]==0x47 && /*TS_PacketHeader.getPID() == 136 &&*/ TS_PacketId <190){      // po kilku przestaje wypisywac ,i cant...
+        if(output[0]==0x47 &&  TS_PacketId <19){      // po kilku przestaje wypisywac ,i cant...
           // std::cout << int(output[0]) << std::endl;
           // std::cout << int(output[1]) << std::endl;
           // std::cout << int(output[2]) << std::endl;
@@ -87,27 +91,47 @@ int main(int argc, char *argv[ ], char *envp[ ])
             // potem na 2 bajtach mamy długość pakietu PES (sprawdz co znaczy jak jest zero) (tak samo jak w AF, dlugosc tego co jest po tym polu)
             // potem opcjonalny pakiet
             PES_PacketHeader.Parse(str, TS_PacketHeader, TS_AdaptationField);
-          }
 
+            if(TS_PacketHeader.getS()) PES_Assembler.Init(TS_PacketHeader.getPID()); 
+          }
           //  Printing
-          //if((TS_PacketHeader.getAFC()==2 or TS_PacketHeader.getAFC()==3) and TS_AdaptationField.getPR()){
             printf("%010d ", TS_PacketId);
             TS_PacketHeader.Print();
-            TS_AdaptationField.Print();
-            PES_PacketHeader.Print();
+            if(printAF) TS_AdaptationField.Print();
+            if(printPES){
+              switch(PES_Assembler.AbsorbPacket(str, TS_PacketHeader, TS_AdaptationField)){
+                case xPES_Assembler::eResult::StreamPackedLost:{
+                  std::cout << " Packet lost! ";
+                  break;  
+                }
+                case xPES_Assembler::eResult::UnexpectedPID:{
+                  std::cout << " Unexpected PID! ";
+                  break;
+                } 
+                case xPES_Assembler::eResult::AssemblingStarted:{
+                  std::cout << " Started ";
+                  std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
+                  if(PES_PacketHeader.getPacketStartCodePrefix()) PES_PacketHeader.Print();
+                  break;  
+                }
+                case xPES_Assembler::eResult::AssemblingContinue:{
+                  std::cout << " Continue ";
+                  std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
+                  break; 
+                }
+                case xPES_Assembler::eResult::AssemblingFinished:{
+                  std::cout << " Finished ";
+                  std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
+                  break;
+                }
+                default:{
+                  break;
+                }
+              }
+            }
             printf("\n");
-          //}
+            delete str;
         }
-
-      // xPES_Assembler::eResult Result = PES_Assembler.AbsorbPacket(str, &TS_PacketHeader, &TS_AdaptationField);
-      //   switch(Result)
-      //   {
-      //     case xPES_Assembler::eResult::StreamPackedLost : printf("PcktLost "); break;
-      //     case xPES_Assembler::eResult::AssemblingStarted : printf("Started "); PES_Assembler.PrintPESH(); break;
-      //     case xPES_Assembler::eResult::AssemblingContinue: printf("Continue "); break;
-      //     case xPES_Assembler::eResult::AssemblingFinished: printf("Finished "); printf("PES: Len=%d", PES_Assembler.getNumPacketBytes()); break;
-      //     default: break;
-      //   }
         TS_PacketId++;
       }
       // TODO - close file    V

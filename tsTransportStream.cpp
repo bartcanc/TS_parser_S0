@@ -142,8 +142,7 @@ void xTS_AdaptationField::Reset()
 corresponding TS packet header
 @return Number of parsed bytes (length of AF or -1 on failure)
 */
-int32_t xTS_AdaptationField::Parse(const uint8_t* PacketBuffer, uint8_t
-AdaptationFieldControl)
+int32_t xTS_AdaptationField::Parse(const uint8_t* PacketBuffer, uint8_t AdaptationFieldControl)
 {
 //parsing
   m_AdaptationFieldControl=AdaptationFieldControl;
@@ -278,7 +277,7 @@ void xPES_PacketHeader::Reset(){
 }
 
 int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeader, xTS_AdaptationField TS_AdaptationField){
-  int whereToStart=4;
+  whereToStart=4;
   if(TS_PacketHeader.getAFC()){
     whereToStart+=1;
     whereToStart+=TS_AdaptationField.getAdaptationFieldLength();
@@ -296,30 +295,14 @@ int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_Packe
     m_PacketLength += Input[whereToStart+5];
 
     switch(m_StreamId){
-      case eStreamId_program_stream_map:{
-        break;
-      }
-      case eStreamId_padding_stream:{
-        break;
-      }
-      case eStreamId_private_stream_2:{
-        break;
-      }
-      case eStreamId_ECM:{
-        break;
-      }
-      case eStreamId_EMM :{
-        break;
-      }
-      case eStreamId_program_stream_directory:{
-        break;
-      }
-      case eStreamId_DSMCC_stream:{
-        break;
-      }
-      case eStreamId_ITUT_H222_1_type_E:{
-        break;
-      }
+      case eStreamId_program_stream_map: break;
+      case eStreamId_padding_stream: break;
+      case eStreamId_private_stream_2: break;
+      case eStreamId_ECM: break;
+      case eStreamId_EMM : break;
+      case eStreamId_program_stream_directory: break;
+      case eStreamId_DSMCC_stream: break;
+      case eStreamId_ITUT_H222_1_type_E: break;
       default:{
         // zczytujemy opcjonalne pola
         if((Input[whereToStart+6]&0b10000000) and !(Input[whereToStart+6]&0b01000000)){
@@ -348,24 +331,65 @@ int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_Packe
 }
 
 void xPES_PacketHeader::Print() const{
-  std::cout << "PES: PSCP=" << int(m_PacketStartCodePrefix) << " SID=" << int(m_StreamId) << " L=" << int(m_PacketLength);
+  std::cout << " PES: PSCP=" << int(m_PacketStartCodePrefix) << " SID=" << int(m_StreamId) << " L=" << m_PacketLength;
 }
 
 
 // xPES_Assembler-------------------------------------------------
 void xPES_Assembler::Init (int32_t PID){
-
+  m_PID = PID;
+  m_LastContinuityCounter = 0;
+  m_BufferSize = 0;
+  m_DataOffset = 0;
 }
-xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStreamPacket, const xTS_PacketHeader* PacketHeader, const xTS_AdaptationField* AdaptationField){
- xPES_Assembler::eResult x;
+xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStreamPacket, xTS_PacketHeader PacketHeader, xTS_AdaptationField AdaptationField){
+  m_PESH.Parse(TransportStreamPacket, PacketHeader, AdaptationField);
+  switch(m_PID){
+      case xPES_PacketHeader::eStreamId::eStreamId_program_stream_map: return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_padding_stream: return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_private_stream_2: return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_ECM: return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_EMM : return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_program_stream_directory: return xPES_Assembler::eResult::UnexpectedPID; 
+      case xPES_PacketHeader::eStreamId::eStreamId_DSMCC_stream: return xPES_Assembler::eResult::UnexpectedPID;
+      case xPES_PacketHeader::eStreamId::eStreamId_ITUT_H222_1_type_E: return xPES_Assembler::eResult::UnexpectedPID;
+      default: break;
+  }
 
- return x;
+  if(PacketHeader.getCC() == 0){
+    m_LastContinuityCounter = PacketHeader.getCC();
+    xBufferReset();
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    return xPES_Assembler::eResult::AssemblingStarted;
+  }
+  else if(PacketHeader.getCC() == 15){
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    m_LastContinuityCounter = PacketHeader.getCC();
+    return xPES_Assembler::eResult::AssemblingFinished;
+  }
+  else if(m_LastContinuityCounter == (PacketHeader.getCC()-1)){
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    m_LastContinuityCounter = PacketHeader.getCC();
+    return xPES_Assembler::eResult::AssemblingContinue;
+  }
+  else{
+    return xPES_Assembler::eResult::StreamPackedLost;
+  }
 }
+
 void xPES_Assembler::xBufferReset (){
-
+  m_Buffer = {0};
 }
 void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
-
+  /*TODO: popraw to bo chyba jest zle (zle data offset jest)*/
+  if(m_LastContinuityCounter == 0){
+    m_BufferSize = 2944;
+    m_Buffer = new uint8_t[m_BufferSize];
+  }
+  
+  for(int i=Size;i<188;i++){
+    m_Buffer[m_DataOffset++] = Data[i];
+  } 
 }
 
 //=============================================================================================================================================================================

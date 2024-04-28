@@ -156,6 +156,7 @@ class xPES_PacketHeader
   eStreamId_ITUT_H222_1_type_E = 0xF8,
 };
 protected:
+  int whereToStart;
   //PES packet header
   uint32_t m_PacketStartCodePrefix;
   uint8_t m_StreamId;
@@ -179,13 +180,15 @@ protected:
 
 public:
   void Reset();
-  int32_t Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeaderS, xTS_AdaptationField TS_AdaptationField);
+  int32_t Parse(const uint8_t* Input, const xTS_PacketHeader TS_PacketHeader, const xTS_AdaptationField TS_AdaptationField);
   void Print() const;
 public:
   //PES packet header
   uint32_t getPacketStartCodePrefix() const { return m_PacketStartCodePrefix; }
   uint8_t getStreamId () const { return m_StreamId; }
   uint16_t getPacketLength () const { return m_PacketLength; }
+  int getWTS() const { return whereToStart; }
+  uint8_t getPES_HDL() const { return m_PES_Header_Data_Length; }
 };
 
 class xPES_Assembler
@@ -194,10 +197,10 @@ public:
   enum class eResult : int32_t
 {
   UnexpectedPID = 1,
-  StreamPackedLost ,
-  AssemblingStarted ,
-  AssemblingContinue,
-  AssemblingFinished,
+  StreamPackedLost = 2,
+  AssemblingStarted = 3,
+  AssemblingContinue = 4,
+  AssemblingFinished = 5,
 };
 protected:
   //setup
@@ -211,10 +214,8 @@ protected:
   bool m_Started;
   xPES_PacketHeader m_PESH;
 public:
-  xPES_Assembler ();
-  ~xPES_Assembler();
   void Init (int32_t PID);
-  eResult AbsorbPacket(const uint8_t* TransportStreamPacket, const xTS_PacketHeader* PacketHeader, const xTS_AdaptationField* AdaptationField);
+  eResult AbsorbPacket(const uint8_t* TransportStreamPacket, xTS_PacketHeader PacketHeader, xTS_AdaptationField AdaptationField);
   void PrintPESH () const { m_PESH.Print(); }
   uint8_t* getPacket () { return m_Buffer; }
   int32_t getNumPacketBytes() const { return m_DataOffset; }
