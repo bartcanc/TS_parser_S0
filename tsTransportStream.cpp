@@ -359,16 +359,16 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStr
   if(PacketHeader.getCC() == 0){
     m_LastContinuityCounter = PacketHeader.getCC();
     xBufferReset();
-    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()-5+m_PESH.getPES_HDL());
     return xPES_Assembler::eResult::AssemblingStarted;
   }
   else if(PacketHeader.getCC() == 15){
-    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()-5+m_PESH.getPES_HDL());
     m_LastContinuityCounter = PacketHeader.getCC();
     return xPES_Assembler::eResult::AssemblingFinished;
   }
   else if(m_LastContinuityCounter == (PacketHeader.getCC()-1)){
-    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()+9+m_PESH.getPES_HDL());
+    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()-6+m_PESH.getPES_HDL());
     m_LastContinuityCounter = PacketHeader.getCC();
     return xPES_Assembler::eResult::AssemblingContinue;
   }

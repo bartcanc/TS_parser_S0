@@ -48,7 +48,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
         PES_PacketHeader.Reset();
 //        uint32_t* streamPrt = &str; 
         
-        if(output[0]==0x47 &&  TS_PacketId <19){      // po kilku przestaje wypisywac ,i cant...
+        if(output[0]==0x47 &&  TS_PacketId <20){      // po kilku przestaje wypisywac ,i cant...
           // std::cout << int(output[0]) << std::endl;
           // std::cout << int(output[1]) << std::endl;
           // std::cout << int(output[2]) << std::endl;
@@ -116,7 +116,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
                 }
                 case xPES_Assembler::eResult::AssemblingContinue:{
                   std::cout << " Continue ";
-                  std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
+                  //std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
                   break; 
                 }
                 case xPES_Assembler::eResult::AssemblingFinished:{
