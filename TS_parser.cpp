@@ -5,7 +5,7 @@
 
 //=============================================================================================================================================================================
 
-const bool printAF = false;
+const bool printAF = true;
 const bool printPES = true;
 
 int main(int argc, char *argv[ ], char *envp[ ])
@@ -91,8 +91,6 @@ int main(int argc, char *argv[ ], char *envp[ ])
             // potem na 2 bajtach mamy długość pakietu PES (sprawdz co znaczy jak jest zero) (tak samo jak w AF, dlugosc tego co jest po tym polu)
             // potem opcjonalny pakiet
             PES_PacketHeader.Parse(str, TS_PacketHeader, TS_AdaptationField);
-
-            if(TS_PacketHeader.getS()) PES_Assembler.Init(TS_PacketHeader.getPID()); 
           }
           //  Printing
             printf("%010d ", TS_PacketId);
@@ -116,7 +114,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
                 }
                 case xPES_Assembler::eResult::AssemblingContinue:{
                   std::cout << " Continue ";
-                  //std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
+                  std::cout << "PES: Len=" << int(PES_Assembler.getNumPacketBytes());
                   break; 
                 }
                 case xPES_Assembler::eResult::AssemblingFinished:{
