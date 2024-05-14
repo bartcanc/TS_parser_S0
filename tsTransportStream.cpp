@@ -278,6 +278,7 @@ void xPES_PacketHeader::Reset(){
 
 int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeader, xTS_AdaptationField TS_AdaptationField){
   whereToStart=4;
+  check10=0;
   if(TS_PacketHeader.getAFC()){
     whereToStart+=1;
     whereToStart+=TS_AdaptationField.getAdaptationFieldLength();
@@ -306,7 +307,14 @@ int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_Packe
       case eStreamId_ITUT_H222_1_type_E: break;
       default:{
         // zczytujemy opcjonalne pola
-        if((Input[whereToStart+6]&0b10000000) and !(Input[whereToStart+6]&0b01000000)){
+        if(Input[whereToStart+6]&0b10000000){
+          if(!(Input[whereToStart+6]&0b01000000)){
+            check10 = check10 | 0b1;
+            check10 = check10 << 1;
+          }
+        }
+        
+        if(check10 == 2){
           m_PES_Scrambling_Control = (m_PES_Scrambling_Control | (Input[whereToStart+6]&0b00110000)) >> 4;     // 2 bit
           m_PES_Priority = (Input[whereToStart+6]&0b00001000);                  // 1 bit
           m_Data_Alignment_Indicator = (Input[whereToStart+6]&0b00000100);      // 1 bit
@@ -399,6 +407,8 @@ for(int i=Size;i<188;i++){
     //std::cout << m_DataOffset << " " << Size << std::endl;
     m_Buffer[m_DataOffset++] = Data[i];
   } 
+  // std::cout << std::endl;
+  // std::cout << "bufor = " << int(m_Buffer[m_DataOffset-1]) << std::endl;
   }
   
 }

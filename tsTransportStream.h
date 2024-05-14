@@ -157,6 +157,7 @@ class xPES_PacketHeader
 };
 protected:
   int whereToStart;
+  int check10;
   //PES packet header
   uint32_t m_PacketStartCodePrefix;
   uint8_t m_StreamId;
@@ -188,6 +189,7 @@ public:
   uint8_t getStreamId () const { return m_StreamId; }
   uint16_t getPacketLength () const { return m_PacketLength; }
   int getWTS() const { return whereToStart; }
+  int getCheck() const { return check10; }
   uint8_t getPES_HDL() const { return m_PES_Header_Data_Length; }
 };
 
