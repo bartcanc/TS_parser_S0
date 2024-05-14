@@ -391,14 +391,16 @@ void xPES_Assembler::xBufferReset (){
 void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
   /*TODO: popraw to bo chyba jest zle (zle data offset jest)*/
   if(m_LastContinuityCounter == 0){
-    m_BufferSize = 2944;
-    m_Buffer = new uint8_t[m_BufferSize];
+    m_BufferSize = m_PESH.getPacketLength();
+    if(m_BufferSize) m_Buffer = new uint8_t[m_BufferSize+6];
   }
-  
-  for(int i=Size;i<188;i++){
+  if(m_BufferSize){
+for(int i=Size;i<188;i++){
     //std::cout << m_DataOffset << " " << Size << std::endl;
     m_Buffer[m_DataOffset++] = Data[i];
   } 
+  }
+  
 }
 
 //=============================================================================================================================================================================
