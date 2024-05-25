@@ -4,7 +4,7 @@
 #include <iostream>
 
 //=============================================================================================================================================================================
-const bool print = false;
+const bool print = true;
 const bool printAF = false;
 const bool printPES = true;
 
@@ -93,13 +93,11 @@ int main(int argc, char *argv[ ], char *envp[ ])
             }
             printf("\n");
           }
-            
         }
         TS_PacketId++;
       }
       // TODO - close file    V
       plik.close();
-      
       return EXIT_SUCCESS;
     }
     else{

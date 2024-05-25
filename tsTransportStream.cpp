@@ -388,7 +388,7 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStr
     m_Started = false;
     return xPES_Assembler::eResult::AssemblingFinished;
   } 
-
+  
   return xPES_Assembler::eResult::AssemblingContinue;
 }
 
