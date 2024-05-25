@@ -3,6 +3,7 @@
 #include <iostream>
 #include <bitset>
 #include <iomanip>
+#include <fstream>
 //=============================================================================================================================================================================
 // xTS_PacketHeader
 //=============================================================================================================================================================================
@@ -398,9 +399,12 @@ void xPES_Assembler::xBufferReset (){
   m_Buffer = new uint8_t[m_BufferSize];
 }
 
-void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
-    for(int i = Size; i<188 and m_DataOffset < m_BufferSize; i++){
-      m_Buffer[m_DataOffset++] = Data[i];
-    } 
+void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size) {
+  std::ofstream outfile("PID136.mp2", std::ios::binary | std::ios::app); // Otwieramy plik w trybie dopisywania
+  for (int i = Size; i < 188 and m_DataOffset < m_BufferSize; i++) {
+    m_Buffer[m_DataOffset++] = Data[i];
+    if(m_DataOffset > m_PESH.getPES_HDL() + 9) outfile.put(Data[i]); // Zapisujemy dane do pliku
   }
+  outfile.close(); // Zamykamy plik
+}
   

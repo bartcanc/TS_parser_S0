@@ -4,7 +4,7 @@
 #include <iostream>
 
 //=============================================================================================================================================================================
-const bool print = true;
+const bool print = false;
 const bool printAF = false;
 const bool printPES = true;
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[ ], char *envp[ ])
 
       int32_t TS_PacketId = 0;
       while(/*not eof*/ !plik.eof() 
-      //x&& TS_PacketId != 150000
+      //&& TS_PacketId != 30
       )
       {
         // TODO - read from file          V
