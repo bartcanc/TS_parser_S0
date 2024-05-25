@@ -209,10 +209,11 @@ protected:
   int32_t m_PID;
   //buffer
   uint8_t* m_Buffer;
-  uint32_t m_BufferSize;
-  uint32_t m_DataOffset;
+  uint32_t m_BufferSize=0;
+  uint32_t m_DataOffset=0;
   //operation
   int8_t m_LastContinuityCounter;
+  uint8_t firstCC;
   bool m_Started;
   xPES_PacketHeader m_PESH;
 public:
@@ -225,6 +226,3 @@ protected:
   void xBufferReset ();
   void xBufferAppend(const uint8_t* Data, int32_t Size);
 };
-
-
-//=============================================================================================================================================================================

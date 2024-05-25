@@ -279,16 +279,10 @@ void xPES_PacketHeader::Reset(){
 int32_t xPES_PacketHeader::Parse(const uint8_t* Input, xTS_PacketHeader TS_PacketHeader, xTS_AdaptationField TS_AdaptationField){
   whereToStart=4;
   check10=0;
-  if(TS_PacketHeader.getAFC()){
+  if(TS_PacketHeader.getAFC() == 2 or TS_PacketHeader.getAFC() == 3){
     whereToStart+=1;
     whereToStart+=TS_AdaptationField.getAdaptationFieldLength();
-    //std::cout << "WTD = " << whereToStart << std::endl;
   }
-  // zaczynamy parsowanie
-  // header ma zawsze 6 bajtów
-  // pierwsze 3 bajty - start code (0000 0000 | 0000 0000 | 0000 0001)
-  // 4 bajt - stream ID ()
-  // 5 i 6 bajt - długość pakietu PES (analogicznie jak w Adaptation Field)
   if(Input[whereToStart] == 0 and Input[whereToStart+1] == 0 and Input[whereToStart+2] == 1){
     m_PacketStartCodePrefix=1;
     m_StreamId = Input[whereToStart+3];
@@ -347,14 +341,14 @@ void xPES_PacketHeader::Print() const{
 // xPES_Assembler-------------------------------------------------
 void xPES_Assembler::Init (int32_t PID){
   m_PID = PID;
-  m_LastContinuityCounter = 0;
-  m_BufferSize = 0;
-  m_DataOffset = 0;
-  m_Started=true;
+  m_LastContinuityCounter = -1;
+  firstCC = -1;
+  m_Started=false;
+  xBufferReset();
 }
 xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStreamPacket, xTS_PacketHeader PacketHeader, xTS_AdaptationField AdaptationField){
   if(PacketHeader.getS() and !m_Started) Init(PacketHeader.getPID()); 
-  m_PESH.Parse(TransportStreamPacket, PacketHeader, AdaptationField);
+  
   switch(m_PID){
       case xPES_PacketHeader::eStreamId::eStreamId_program_stream_map: return xPES_Assembler::eResult::UnexpectedPID;
       case xPES_PacketHeader::eStreamId::eStreamId_padding_stream: return xPES_Assembler::eResult::UnexpectedPID;
@@ -367,61 +361,46 @@ xPES_Assembler::eResult xPES_Assembler::AbsorbPacket(const uint8_t* TransportStr
       default: break;
   }
 
-  if(PacketHeader.getCC() == 0){
-    if(!m_Started and m_LastContinuityCounter != PacketHeader.getCC()-1){
-      return xPES_Assembler::eResult::StreamPackedLost;
-    }
+  m_PESH.Reset();
+  m_PESH.Parse(TransportStreamPacket, PacketHeader, AdaptationField);
+  if(!PacketHeader.getAFC()) return xPES_Assembler::eResult::StreamPackedLost;
+
+  if(PacketHeader.getS() and !m_Started){
     m_LastContinuityCounter = PacketHeader.getCC();
+    firstCC = PacketHeader.getCC();
     xBufferReset();
-    // std::cout <<std::endl;
-    // std::cout << "size = " << m_PESH.getWTS() << " header length = " << int(m_PESH.getPES_HDL()) << std::endl;
     xBufferAppend(TransportStreamPacket, m_PESH.getWTS());
     m_Started=true;
     return xPES_Assembler::eResult::AssemblingStarted;
   }
-  else if(m_LastContinuityCounter == 14){
-    if(m_LastContinuityCounter != PacketHeader.getCC()-1){
-      return xPES_Assembler::eResult::StreamPackedLost;
-    }
-    // std::cout <<std::endl;
-    // std::cout << "size = " << m_PESH.getWTS() << " header length = " << int(m_PESH.getPES_HDL()) << std::endl;
-    xBufferAppend(TransportStreamPacket, m_PESH.getWTS());
-    m_LastContinuityCounter = PacketHeader.getCC();
-     m_Started=false;
-    return xPES_Assembler::eResult::AssemblingFinished;
-  }
-  else if(m_LastContinuityCounter == (PacketHeader.getCC()-1)){
-    // std::cout <<std::endl;
-    // std::cout << "size = " << m_PESH.getWTS() << " header length = " << int(m_PESH.getPES_HDL()) << std::endl;
-    xBufferAppend(TransportStreamPacket, m_PESH.getWTS()-1);
-    m_LastContinuityCounter = PacketHeader.getCC();
-    return xPES_Assembler::eResult::AssemblingContinue;
-  }
-  else{
+  
+  uint8_t nextCC = (m_LastContinuityCounter+1) % 16;
+  if(PacketHeader.getCC() != nextCC){
+    m_Started = false;
     return xPES_Assembler::eResult::StreamPackedLost;
   }
   
+  xBufferAppend(TransportStreamPacket, m_PESH.getWTS());
+  m_LastContinuityCounter = PacketHeader.getCC();
   
+  if(m_DataOffset == m_BufferSize){
+    m_Started = false;
+    return xPES_Assembler::eResult::AssemblingFinished;
+  } 
+
+  return xPES_Assembler::eResult::AssemblingContinue;
 }
 
 void xPES_Assembler::xBufferReset (){
-  m_Buffer = {0};
-}
-void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
-  /*TODO: popraw to bo chyba jest zle (zle data offset jest)*/
-  if(m_LastContinuityCounter == 0){
-    m_BufferSize = m_PESH.getPacketLength();
-    if(m_BufferSize) m_Buffer = new uint8_t[m_BufferSize+6];
-  }
-  if(m_BufferSize){
-for(int i=Size;i<188;i++){
-    //std::cout << m_DataOffset << " " << Size << std::endl;
-    m_Buffer[m_DataOffset++] = Data[i];
-  } 
-  // std::cout << std::endl;
-  // std::cout << "bufor = " << int(m_Buffer[m_DataOffset-1]) << std::endl;
-  }
-  
+  m_Buffer = nullptr;
+  m_BufferSize = m_PESH.getPacketLength()+6;
+  m_DataOffset = 0;
+  m_Buffer = new uint8_t[m_BufferSize];
 }
 
-//=============================================================================================================================================================================
+void xPES_Assembler::xBufferAppend(const uint8_t* Data, int32_t Size){
+    for(int i = Size; i<188 and m_DataOffset < m_BufferSize; i++){
+      m_Buffer[m_DataOffset++] = Data[i];
+    } 
+  }
+  
